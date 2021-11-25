@@ -1,0 +1,20 @@
+{
+  "name": "package",
+  "version": "1.0.0",
+  "main": "scribd.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Jsouwl",
+  "license": "ISC",
+  "dependencies": {
+    "git": "^0.1.5",
+    "mongodb": "^4.2.0",
+    "node-fetch": "2.6.1",
+    "node-telegram-bot-api": "^0.54.0",
+    "request": "^2.88.2",
+    "telegram-bot-api": "^2.0.1"
+  },
+  "keywords": [],
+  "description": ""
+}
