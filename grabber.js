@@ -1,44 +1,43 @@
 const { Console } = require("console");
 
 (async () => {
+const ffmpeg = require('fluent-ffmpeg');
 const request = require('request');
-const fetch = require('node-fetch');
 const MongoClient = require("mongodb").MongoClient;
 const url = "mongodb://localhost:27017/";
 const mongoClient = new MongoClient(url);
 const db = mongoClient.db("usersdb");
 const collection = db.collection("VideosData");
 const fs = require('fs')
-const downloadFile = (async (imageUrls, path) => {
-    const res = await fetch(imageUrls);
-    const fileStream = fs.createWriteStream(path);
-    await new Promise((resolve, reject) => {
-        res.body.pipe(fileStream);
-        res.body.on("error", reject);
-        fileStream.on("finish", resolve);
-      });
-  });
-
-//for (const record of data.gifs){
+const getDuration = require('ffprobe-duration');
+const files = fs.readdirSync('./gifs/')
+const separator = ";"
+const {delay, geVideoInfo, downloadFile} = require('./util.js')
 await mongoClient.connect();
-const status = "scanned"
-const statusNew = "downloaded"
-const videoLinks = await collection.find({"status":  status}).toArray()
+const videoLinks = await collection.find({"status":  'scanned'}).toArray()
 for (const record of videoLinks) {
-    console.log(record.link)
     const imageUrls = record.link
+    const pluginUrl = imageUrls.split('.')
     const imageId = record.redid
-    const path = './gifs/'+imageId+'.mp4'
+    const lastElement = pluginUrl[pluginUrl.length-1]
+    const path = './gifs/'+imageId+'.'+lastElement
+    const test = './gifs/aggravatingtwinbird.mp4'
     try{
         downloadFile(imageUrls, path);
-        var myquery = { status: status };
-        var newvalues = { $set: {status: statusNew} };
-        await collection.updateOne(myquery, newvalues)
+        const fullFileName = test
+        const metaData = await geVideoInfo(fullFileName)
+        const sizeInMb = metaData.format.size
+        console.log(sizeInMb)
+        //console.log(imageUrls, sizeInMb)
+        await collection.updateOne({ "redid": record.redid }, { $set: {"status": "downloaded"} })
+        if(sizeInMb > 10) {
+            console.log(imageId, "is over 10 Mb")
+        }
     } catch(e) {
-    console.log('error downloading', e)
+        await collection.updateOne({ "redid": record.redid }, { $set: {"status": "download failed"} })
+        }//catch
+    await delay(1000)
     }
-
-}// for
 await mongoClient.close();
 })().catch(e => {
     console.log(e)
